@@ -11,8 +11,11 @@ It's had some revisions to it (eg initially it used a mongoDB back end) however 
 Should be fairly self-explanatory:
 
 **1.** install the db using the .sql file provided
+
 **2.** npm install
+
 **3.** create _app-root_/config/ and add development.env and production.env files
+
 **4.** Add the following settings to the above files and complete as appropriate:
 
     HOST=
@@ -25,5 +28,7 @@ Should be fairly self-explanatory:
     EMAIL=
 
 **5.** Create _app-root_/timesheets/ if necessary and add timesheets in .csv format
+
 **6.** npm start or npm startDev
+
 **7.** Browse to '/' on the url:port that your server is listening on
