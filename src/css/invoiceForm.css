@@ -1,0 +1,21 @@
+body {
+  background-color: white;
+}
+
+
+.short-input {
+  max-width: 55px;
+}
+
+#date-input {
+  max-width: 110px;
+}
+
+#filename-input {
+  max-width: 140px;
+
+}
+
+.description-input {
+  flex-grow: 3;
+}

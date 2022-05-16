@@ -1,0 +1,104 @@
+
+#page {
+  background: white;
+  display: block;
+  margin: 0 auto;
+  margin-bottom: 0.5cm;
+  /* padding-top: 3%;
+  padding-left: 5%;
+  padding-right: 8%; */
+  padding: 5%;
+  box-shadow: 0 0 0.5cm rgba(0,0,0,0.5);
+}
+
+#page[size="A4"] {  
+  width: 21cm;
+  height: 29.7cm;
+
+}
+
+#page[size="A4"][layout="portrait"] {
+  width: 29.7cm;
+  height: 21cm;  
+}
+@media print {
+  body, #page {
+    margin: 0;
+    box-shadow: none;
+  }
+}
+
+hr {
+  border: 1px solid black;
+  margin: 35px 0;
+}
+
+table, th, td {
+  font-size: 0.9em;
+}
+
+th {
+  background-color: #eeeeee;
+}
+
+.header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+
+.businessAddressPanel {
+  width: 250px;
+  line-height: 1em;
+}
+
+.businessAddressPanel > label, .clientAddressPanel > label {
+  display: block;
+}
+
+.last-label-of-block {
+  margin-bottom: 10px;
+}
+
+.clientAddressPanel {
+  width: 220px;
+  line-height: 1em;
+}
+
+.invoice-date {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  margin-bottom: 25px;
+}
+
+.invoice-date h6 {
+  display: inline;
+}
+
+.invoice-summary {
+  margin-bottom: 10px;
+}
+
+.business-name {
+  font-size: 1.60em
+}
+
+.inline {
+  display: inline-block;
+  vertical-align: top;
+}
+
+.date-text {
+  font-size: 0.9em;
+  margin-left: 2%;
+}
+
+
+.small-table-cell {
+  width: 15%;
+}
+
+.border-bottom {
+  border-bottom: 2.25px solid #eeeeee;
+}
