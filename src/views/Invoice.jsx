@@ -1,63 +1,61 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import '../css/invoice.css';
 var moment = require('moment-business-days');
 
-class Invoice extends React.Component {
+function Invoice(props) {
+  const [timesheetEntries, setTimesheetEntries] = useState(undefined);
+  const { invoice, client, clientAddress, businessAddress, contactDetails } = props.location.state;
 
-  state = {
-    timesheetEntries: undefined
-  }
-
-  componentDidMount = () => {
-    fetch( `/get/csv`, {
+  useEffect(() => {
+    fetch(`/get/csv`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json; charset=utf-8"
       },
-      body: JSON.stringify({ csvFilename: this.props.location.state.invoice.csvFilename
+      body: JSON.stringify({
+        csvFilename: props.location.state.invoice.csvFilename
       }),
-    }).then( res => res.json() ).then( res => { 
+    }).then(res => res.json()).then(res => {
 
-        // Filter header row
-        const filteredTimesheet = res.filter( row => row.task != '' && row.task != "Work Description" )
-        this.setState({ timesheetEntries: filteredTimesheet });
+      // Filter header row
+      const filteredTimesheet = res.filter(row => row.task != '' && row.task != "Work Description")
+      setTimesheetEntries(filteredTimesheet);
     });
+  }, [])
+
+
+  function getTotalInvoiceAmount(rate, hours) {
+    return parseFloat(rate * hours).toFixed(2);
   }
 
-  getTotalInvoiceAmount = (rate, hours) => parseFloat(rate * hours).toFixed(2)
-  
-  render() {
-    const { invoice, client, clientAddress, businessAddress, contactDetails } = this.props.location.state;
+  return (
+    <section id="page" size="A4">
+      <header className="header">
+        {businessAddress ? <BusinessAddress address={businessAddress} contactDetails={contactDetails} /> : null}
+        <h3 className="invoice-heading">Invoice</h3>
+      </header>
 
-    return (
-      <section id="page" size="A4">
-        <header className="header">
-          { businessAddress ? <BusinessAddress address={businessAddress} contactDetails={contactDetails}/> : null }
-          <h3 className="invoice-heading">Invoice</h3>
-        </header>
-        
-        <hr />
+      <hr />
 
-        <h6 className="inline">Bill To:</h6>
-        { clientAddress ? <ClientAddress className="invoice-heading" address={clientAddress} client={client} /> : null }
+      <h6 className="inline">Bill To:</h6>
+      {clientAddress ? <ClientAddress className="invoice-heading" address={clientAddress} client={client} /> : null}
 
-        <div className="invoice-date">
-          <h6 className="invoice-heading">Date:</h6><label className="invoice-heading date-text">{invoice ? moment(invoice.date, 'YYYY/MM/DD').format('DD/MM/YYYY') : null}</label>
-        </div>
+      <div className="invoice-date">
+        <h6 className="invoice-heading">Date:</h6><label className="invoice-heading date-text">{invoice ? moment(invoice.date, 'YYYY/MM/DD').format('DD/MM/YYYY') : null}</label>
+      </div>
 
-        { invoice ? <InvoiceSummary timesheetEntries={this.state.timesheetEntries} invoice={invoice} getInvoiceAmount={this.getTotalInvoiceAmount}/> : null }
-    </section> 
-    )
-  }
+      {invoice ? <InvoiceSummary timesheetEntries={timesheetEntries} invoice={invoice} getInvoiceAmount={getTotalInvoiceAmount} /> : null}
+    </section>
+  )
 }
 
 const InvoiceSummary = props => {
   return (
     <div className="invoice-summary">
-      <SummaryTable 
-        description={props.invoice.description} 
-        hours={props.invoice.hours} 
-        price={props.invoice.rate} 
+      <SummaryTable
+        description={props.invoice.description}
+        hours={props.invoice.hours}
+        price={props.invoice.rate}
         amount={props.getInvoiceAmount(props.invoice.rate, props.invoice.hours)}
       />
       <TotalTable amount={props.getInvoiceAmount(props.invoice.rate, props.invoice.hours)} />
@@ -65,7 +63,7 @@ const InvoiceSummary = props => {
         props.timesheetEntries ? (
           <div>
             <h6>Itemised Billing:</h6>
-            <ItemisedTable 
+            <ItemisedTable
               timesheetEntries={props.timesheetEntries}
             />
           </div>
@@ -76,15 +74,15 @@ const InvoiceSummary = props => {
 }
 
 const BusinessAddress = props => {
-  return  (
+  return (
     <div className="businessAddressPanel">
       <label className="business-name" >{props.contactDetails.businessName}</label>
       <label>{props.address.addressLineOne}</label>
-      { props.address ? <div><label>{props.address.addressLineTwo}</label></div> : null }
+      {props.address ? <div><label>{props.address.addressLineTwo}</label></div> : null}
       <label>{props.address.city}</label>
       <label className="last-label-of-block">{props.address.postOrZipCode}</label>
-      {props.contactDetails.phone ? <div><label>{props.contactDetails.phone}</label></div> : null }
-      {props.contactDetails.email ? <div><label>{props.contactDetails.email}</label></div> : null }
+      {props.contactDetails.phone ? <div><label>{props.contactDetails.phone}</label></div> : null}
+      {props.contactDetails.email ? <div><label>{props.contactDetails.email}</label></div> : null}
     </div>
   )
 
@@ -93,19 +91,19 @@ const BusinessAddress = props => {
 const ClientAddress = props => {
   return (
     <div>
-    { props.client ?
-      <div className="clientAddressPanel">
-        <label>{props.client.name}</label>
-        <label>{props.address.addressLineOne}</label>
-        <label>{props.address.addressLineTwo}</label>
-        <label>{props.address.addressLineThree}</label>
-        { props.address.addressLineFour ? <div><label>{props.address.countyOrState}</label></div> : null}
-        <label>{props.address.city}</label>
-        { props.address.countyOrState ? <div><label>{props.client.countyOrState}</label></div> : null}
-        <label>{props.address.postOrZipCode}</label>
-      </div> 
-      : null 
-    }
+      {props.client ?
+        <div className="clientAddressPanel">
+          <label>{props.client.name}</label>
+          <label>{props.address.addressLineOne}</label>
+          <label>{props.address.addressLineTwo}</label>
+          <label>{props.address.addressLineThree}</label>
+          {props.address.addressLineFour ? <div><label>{props.address.countyOrState}</label></div> : null}
+          <label>{props.address.city}</label>
+          {props.address.countyOrState ? <div><label>{props.client.countyOrState}</label></div> : null}
+          <label>{props.address.postOrZipCode}</label>
+        </div>
+        : null
+      }
     </div>
   )
 }
@@ -137,14 +135,14 @@ const TotalTable = props => {
 
   return (
     <table className="table table-borderless" >
-    <tbody>
-    <tr>
-      <td colSpan="2"></td>
-      <td className="small-table-cell border-bottom" ><strong>Total</strong></td>
-      <td className="small-table-cell border-bottom" >{`£${props.amount}`}</td>
-    </tr>
-    </tbody>
-  </table>
+      <tbody>
+        <tr>
+          <td colSpan="2"></td>
+          <td className="small-table-cell border-bottom" ><strong>Total</strong></td>
+          <td className="small-table-cell border-bottom" >{`£${props.amount}`}</td>
+        </tr>
+      </tbody>
+    </table>
   )
 }
 
@@ -162,7 +160,7 @@ const ItemisedTable = props => {
       </thead>
       <tbody>
         {
-          props.timesheetEntries.map( (row, i) => {
+          props.timesheetEntries.map((row, i) => {
             return (
               <tr key={i}>
                 <td>{row.day}</td>
@@ -171,7 +169,8 @@ const ItemisedTable = props => {
                 <td>{row.task}</td>
                 <td>{row.time}</td>
               </tr>
-            )})
+            )
+          })
         }
       </tbody>
     </table>

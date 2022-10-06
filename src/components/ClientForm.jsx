@@ -1,79 +1,113 @@
-import React from 'react';
+import React, { useState } from 'react';
 import AddressBasedForm from './AddressBasedForm';
 import AddressFields from './AddressFields';
 import StatusBar from './StatusBar';
 import statusBarTransition from '../utils/statusBarTransition';
+import useAPI from '../hooks/useAPI';
 
-class ClientForm extends AddressBasedForm {
+// updateStatusBarMessage = message => this.setState({ statusMessage: message });
 
-  state = {
-    ...this.state,
-    clientName: '',
-    addAddress: false,
-    statusMessage: ''
+// triggerStatusBarTransition = statusMessage => {
+//   const transitionDuration = 5000;
+//   statusBarTransition(statusMessage, transitionDuration);
+//   // Allow time to fade out before resetting the message
+//   setTimeout(() => this.updateStatusBarMessage(''), transitionDuration + 1500);
+// }
+
+
+function ClientForm() {
+  function initialiseAddress() {
+    return {
+      addressLineOne: '',
+      addressLineTwo: '',
+      addressLineThree: '',
+      addressLineFour: '',
+      city: '',
+      countyOrState: '',
+      postOrZipCode: ''
+    };
   }
 
-  updateStatusBarMessage = message => this.setState({ statusMessage: message });
+  const { getClients } = useAPI().data;
+  const [addAddress, setAddAddress] = useState(false);
+  const [address, setAddress] = useState(initialiseAddress());
+  const [clientName, setClientName] = useState('');
+  const [statusMessage, setStatusMessage] = useState('');
 
-  triggerStatusBarTransition = statusMessage => {
-    const transitionDuration = 5000;
-    statusBarTransition(statusMessage, transitionDuration);
-    // Allow time to fade out before resetting the message
-    setTimeout(() => this.updateStatusBarMessage(''), transitionDuration + 1500);
-  }
+  // function handleResponse(message, getClients, stateUpdateObj) {
+  //   setStatusMessage(message);
+  //   getClients();
+  //   setAddress(initialiseAddress());
+  //   setState(stateUpdateObj);
+  // }
 
-  createClient = (requestBody) => this.submitForm({ url: '/create/client', requestBody });
-
-  handleSubmit = (state, updateContainerData) => {
-    const { clientName, addAddress } = state;
-
-    addAddress ? this.createClient({ ...state })
-                  .then(res => this.handleResponse(res.message, updateContainerData, { clientName: '', addAddress: false }))
-                  .catch(err => this.updateStatusBarMessage("An error occurred, please try again"))
-                : this.createClient({ clientName })
-                  .then(res => this.handleResponse(res.message, updateContainerData, { clientName: '' }))
-                  .catch(err => this.updateStatusBarMessage("An error occurred, please try again"));
-  }
-
-  handleResponse = (message, updateContainerData, stateUpdateObj) => {
-    this.updateStatusBarMessage(message);
-    updateContainerData("clients");
-    this.initialiseAddress();
-    this.setState(stateUpdateObj);
-  }
-
-  handleCheckboxChange = e => {
-    if (this.state.addAddress) {
-      this.initialiseAddress();
-      this.setState({ addAddress: false });
+  function handleCheckboxChange() {
+    if (addAddress) {
+      setAddress(initialiseAddress());
+      setAddAddress(false);
     } else {
-      this.setState({ addAddress: true });
+      setAddAddress(true);
     }
   }
 
-
-  render() {
-    this.state.statusMessage ? this.triggerStatusBarTransition(this.state.statusMessage) : null;
-    return (
-      <div>
-        <StatusBar message={this.state.statusMessage} />
-        <div id="client-input" className="panel-item">
-          <label htmlFor="client-name">Name:</label>
-          <input id="client-name" type="text" name="clientName" value={this.state.clientName} onChange={(e) => this.textInputHandler(e)} />
-        </div>
-        <div id="include-address-control" className="panel-controls">
-          <label htmlFor="include-address">Add an address?</label><br />
-          <input id="include-address" type="checkbox" name="random" value={this.state.addAddress} checked={this.state.addAddress} onChange={(e) => this.handleCheckboxChange(e)} />
-        </div>
-        <div>
-          {this.state.addAddress ? <AddressFields changeHandler={(e) => this.textInputHandler(e)} /> : null}
-        </div>
-        <div className="button-container">
-          <button type="submit" className="btn btn-primary" onClick={(e) => this.handleSubmit(this.state, this.props.updateContainerData)}>Save</button>
-        </div>
-      </div>
-    )
+  function createClient(params) {
+    return submitForm({ url: '/create/client', requestBody: { address, clientName } });
   }
+
+  function addressInputHandler(e) {
+    address[e.target.name] = e.target.value;
+    setAddress(address);
+  }
+
+  function handleSubmit() {
+    addAddress ? createClient({ address, clientName })
+      .then(res => {
+        setMessage(message);
+        setClientName('');
+        setAddress(initialiseAddress());
+        setAddress(false);
+        getClients();
+      })
+      .catch(err => updateStatusBarMessage("An error occurred, please try again"))
+      : createClient({ clientName })
+        .then(res => {
+          setMessage(message);
+          setClientName('');
+          getClients();
+        })
+        .catch(err => updateStatusBarMessage("An error occurred, please try again"));
+  }
+
+  // statusMessage ? this.triggerStatusBarTransition(statusMessage) : null;
+
+  return (
+    <form onSubmit={(e) => handleSubmit()}>
+      <StatusBar message={statusMessage} />
+      <div id="client-input" className="panel-item">
+        <label htmlFor="client-name">Name:</label>
+        <input id="client-name" type="text" name="clientName" value={clientName} onChange={(e) => setClientName(e.target.value)} />
+      </div>
+      <div id="include-address-control" className="panel-controls">
+        <label htmlFor="include-address">Add an address?</label><br />
+        <input id="include-address" type="checkbox" name="random" value={this.state.addAddress} checked={addAddress} onChange={(e) => handleCheckboxChange()} />
+      </div>
+      <div>
+        {addAddress ? <AddressFields
+          changeHandler={(e) => addressInputHandler(e)}
+          addressLineOne={address.addressLineOne}
+          addressLineTwo={address.addressLineTwo}
+          addressLineThree={address.addressLineThree}
+          addressLineFour={address.addressLineFour}
+          city={address.city}
+          countyOrState={address.countyOrState}
+          postOrZipCode={address.postOrZipCode}
+        /> : null}
+      </div>
+      <div className="button-container">
+        <button type="submit" className="btn btn-primary">Save</button>
+      </div>
+    </form>
+  )
 }
 
 export default ClientForm;
