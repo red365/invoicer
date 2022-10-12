@@ -52,11 +52,11 @@ function updateInvoice(queryParams) {
   year = ?, 
   month = ?, 
   rate = ?, 
-  date = "?",
+  date = ?,
   daysOff = ?, 
   hours = ?, 
-  description = "?", 
-  csvFilename= "?", 
+  description = ?, 
+  csvFilename= ?, 
   clientRef = ?, 
   myAddressRef = ? 
   where id = ?`;
@@ -185,12 +185,12 @@ server.post('/create/client', ( request, response, next) => {
   createClient(request.fields).catch(err => next(err)).then(results => {
     clientId = results.insertId;
     request.fields.addAddress ? 
-      createAddress({...queryParams, isClientAddress: true}).catch(err => next(err)).then(results => createClientAddress(clientId, results.insertId).then(results => response.status(200).json({ message: "Client and address added" }))) 
+      createAddress({ ...request.fields.address, isClientAddress: true}).catch(err => next(err)).then(results => createClientAddress(clientId, results.insertId).then(results => response.status(200).json({ message: "Client and address added" }))) 
       : response.status(200).json({ message: "Client added" });
     });
 })
 
-server.post('/create/address', ( request, response, next) => createAddress(request.fields).catch(err => next(err)).then(results => request.fields.isClientAddress ? createClientAddress(request.fields.selectedClient.id, results.insertId ).then(results => response.status(200).json({ message: "Client address created"})) : response.status(200).json({ message: "Business address created"})));
+server.post('/create/address', ( request, response, next) => createAddress({...request.fields.address, isClientAddress: request.fields.isClientAddress } ).catch(err => next(err)).then(results => request.fields.isClientAddress ? createClientAddress(request.fields.selectedClient.id, results.insertId ).then(results => response.status(200).json({ message: "Client address created"})) : response.status(200).json({ message: "Business address created"})));
 server.post('/get/client-addresses', (request, response, next) => getClientAddresses(request.fields).catch(err => next(err)).then(results => response.json(results)));
 server.post('/invoice-list', (request, response, next) => getInvoiceList(request.fields).catch(err => next(err)).then(results => response.json(results)) );
 server.post('/view-invoice', (request, response, next) => getInvoiceData(request.fields).catch(err => next(err)).then(invoiceData => response.json(invoiceData)));
@@ -203,7 +203,6 @@ server.get('/get/my-addresses', (request, response, next) => getBusinessAddresse
 server.get('/*', (request, response) => response.sendFile( indexFilePath ));
 
 server.use((err, req, res, next) => {
-  console.log(err.stack)
   return res.status(500).json({ message: 'Internal server error occurred' });
 });
 

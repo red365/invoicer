@@ -7,6 +7,7 @@ import PaginationLinks from '../components/PaginationLinks';
 import InvoiceListControls from '../components/InvoiceListControls';
 import StatusBar from '../components/StatusBar';
 import statusBarTransition from '../utils/statusBarTransition';
+import useStatusBar from '../hooks/useStatusBar';
 import useAPI from '../hooks/useAPI';
 
 function Invoices(props) {
@@ -27,11 +28,12 @@ function Invoices(props) {
   const { selectedClient, displayInvoiceForm, invoices, clientAddresses, invoiceCurrentlyBeingEdited, organiseByYear, invoicesPerPage, selectedYear, pageOfInvoicesToDisplay, statusMessage } = invoiceViewParams;
   const { myAddresses, contactDetails, clients } = useAPI().data;
 
+  const [notificationConfig, setNotificationConfig] = useStatusBar();
+
   useEffect(() => {
-    console.log("selectedClient", selectedClient)
     if (selectedClient.id) {
-      fetchInvoiceList().then(res => updateViewParams({ invoices: res }).catch(err => console.log("An error occurred during fetch")));
-      fetchClientAddresses().then(res => updateViewParams({ clientAddresses: res }).catch(err => console.log("An error occurred during fetch")));
+      fetchInvoiceList().then(res => updateViewParams({ invoices: res })).catch(err => setNotificationConfig({ message: "An error occurred during fetch", style: "error" }));
+      fetchClientAddresses().then(res => updateViewParams({ clientAddresses: res })).catch(err => setNotificationConfig({ message: "An error occurred during fetch", style: "error" }));
     }
   }, [selectedClient.id]);
 
@@ -71,7 +73,6 @@ function Invoices(props) {
   }
 
   function fetchInvoiceList() {
-    console.log("selectedClient: ", selectedClient)
     return fetchWrapper({ url: "/invoice-list", method: "POST", body: { id: selectedClient.id } }).then(res => handleAnyErrors(res));
   }
 
@@ -84,7 +85,6 @@ function Invoices(props) {
   }
 
   function updateViewParams(newViewParams) {
-    console.log(newViewParams);
     setInvoiceViewParams((prev) => {
       return { ...prev, ...newViewParams };
     })
@@ -93,10 +93,10 @@ function Invoices(props) {
   function deleteInvoice(invoice) {
     fetchDeleteInvoice(invoice)
       .then(res => {
-        updateStatusBarMessage(res.message);
+        setNotificationConfig({ message: res.message, style: "success" });
         fetchInvoiceList()
-          .then(res => updateViewParams({ invoices: res }).catch(err => console.log("An error occurred during fetch")));
-      }).catch(err => updateStatusBarMessage("An error occurred. Please try again."));
+          .then(res => updateViewParams({ invoices: res })).catch(err => setNotificationConfig({ message: "An error occurred. Please try again.", style: "error" }));
+      }).catch(err => setNotificationConfig({ message: "An error occurred. Please try again.", style: "error" }));
   }
 
   function getItemFromList(value, list) {
@@ -115,11 +115,6 @@ function Invoices(props) {
           pageOfInvoicesToDisplay: undefined
         }
       );
-      // this.setState({ selectedClient: getItemFromList(e.target.value, clients), displayInvoiceForm: false, organiseByYear: true, selectedYear: undefined, invoicesPerPage: '', pageOfInvoicesToDisplay: undefined },
-      //   () => {
-      //     this.fetchInvoiceList().then(res => this.setState({ invoices: res, })).catch(err => console.log("An error occurred during fetch"));
-      //     this.fetchClientAddresses(fetch).then(res => this.setState({ clientAddresses: res })).catch(err => console.log("An error occurred during fetch"));
-      //   })
     } else {
       updateViewParams(
         {
@@ -153,13 +148,10 @@ function Invoices(props) {
   }
 
   function displayInvoiceListControls(selectedClient, invoices, displayInvoiceForm) {
-    console.log(selectedClient, invoices, !displayInvoiceForm)
     return selectedClient && invoices && !displayInvoiceForm;
   }
 
   function displayInvoiceList(selectedClient, invoices, displayInvoiceForm, selectedYear, invoicesPerPage) {
-    //console.log("Params: ", selectedClient, invoices, displayInvoiceForm, selectedYear, invoicesPerPage)
-    //console.log("displayInvoiceList:", selectedClient && invoices && !displayInvoiceForm, (selectedYear || invoicesPerPage))
     return displayInvoiceListControls(selectedClient, invoices, displayInvoiceForm) && (selectedYear || invoicesPerPage);
   }
 
@@ -172,7 +164,7 @@ function Invoices(props) {
   }
 
   function displayNewInvoiceButton(selectedClient, displayInvoiceForm, invoiceCurrentlyBeingEdited) {
-    return selectedClient && !displayInvoiceForm && !invoiceCurrentlyBeingEdited;
+    return Boolean(selectedClient.id && !displayInvoiceForm && !invoiceCurrentlyBeingEdited);
   }
 
   function handleRadioSelect(e) {
@@ -202,28 +194,13 @@ function Invoices(props) {
     updateViewParams({ selectedYear: e.target.value });
   }
 
-  function updateStatusBarMessage(message) {
-    updateViewParams({ statusMessage: message });
-  }
-
-  function triggerStatusBarTransition(statusMessage) {
-    const transitionDuration = 5000;
-    statusBarTransition(statusMessage, transitionDuration);
-    // Allow time to fade out before resetting the message
-    setTimeout(() => updateStatusBarMessage(''), transitionDuration + 1500);
-  }
-
-  statusMessage ? triggerStatusBarTransition(statusMessage) : null;
-  console.log("display invoice list controls: ", displayInvoiceListControls(selectedClient, invoices, displayInvoiceForm))
-  console.log("ipp", invoicesPerPage);
-
   return (
     <div>
       <div>
         <div className="panel-title">
           {selectedClient ? getHeaderContent() : <h3>Invoices</h3>}
         </div>
-        <StatusBar message={statusMessage} />
+        <StatusBar notificationConfig={notificationConfig} />
         <div className="panel-controls">
           <div id="client-select">
             {clients ? <div><label>Client: </label><Dropdown id="client-select" dropdownItems={clients} propToUseAsItemText="name" value={selectedClient ? selectedClient.id : ''} changeHandler={(e) => onClientDropdownValueSelect(e, clients)} /></div> : <p className="invoices-feedback">You need to add a client</p>}
@@ -274,13 +251,13 @@ function Invoices(props) {
           <InvoiceForm
             clientAddresses={clientAddresses.filter(address => address.clientId === selectedClient.id)}
             myAddresses={myAddresses}
-            updateStatusBarMessage={updateStatusBarMessage}
+            notificationConfig={notificationConfig}
+            setNotificationConfig={setNotificationConfig}
             handleErrors={handleAnyErrors}
             closeForm={closeForm}
-            // changeHandler={(e) => onDropdownValueSelect(e, clients)}
             invoice={invoiceCurrentlyBeingEdited ? invoiceCurrentlyBeingEdited : undefined}
             invoiceBeingEdited={invoiceCurrentlyBeingEdited}
-            refreshInvoiceList={() => fetchInvoiceList().then(res => updateViewParams("invoices", res)).catch(err => console.log("An error occurred during fetch"))}
+            refreshInvoiceList={() => fetchInvoiceList().then(res => updateViewParams({ invoices: res })).catch(err => setNotificationConfig({ message: "An error occurred during fetch", style: "error" }))}
           />
           : null
         }

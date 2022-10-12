@@ -1,19 +1,8 @@
 import React, { useState } from 'react';
-import AddressBasedForm from './AddressBasedForm';
 import AddressFields from './AddressFields';
 import StatusBar from './StatusBar';
-import statusBarTransition from '../utils/statusBarTransition';
+import useStatusBar from '../hooks/useStatusBar';
 import useAPI from '../hooks/useAPI';
-
-// updateStatusBarMessage = message => this.setState({ statusMessage: message });
-
-// triggerStatusBarTransition = statusMessage => {
-//   const transitionDuration = 5000;
-//   statusBarTransition(statusMessage, transitionDuration);
-//   // Allow time to fade out before resetting the message
-//   setTimeout(() => this.updateStatusBarMessage(''), transitionDuration + 1500);
-// }
-
 
 function ClientForm() {
   function initialiseAddress() {
@@ -28,18 +17,11 @@ function ClientForm() {
     };
   }
 
-  const { getClients } = useAPI().data;
+  const { getClients } = useAPI();
   const [addAddress, setAddAddress] = useState(false);
   const [address, setAddress] = useState(initialiseAddress());
   const [clientName, setClientName] = useState('');
-  const [statusMessage, setStatusMessage] = useState('');
-
-  // function handleResponse(message, getClients, stateUpdateObj) {
-  //   setStatusMessage(message);
-  //   getClients();
-  //   setAddress(initialiseAddress());
-  //   setState(stateUpdateObj);
-  // }
+  const [notificationConfig, setNotificationConfig] = useStatusBar();
 
   function handleCheckboxChange() {
     if (addAddress) {
@@ -50,46 +32,64 @@ function ClientForm() {
     }
   }
 
+  function handleAnyErrors(response) {
+    if (response.ok) {
+      return response.json();
+    } else {
+      throw Error(response.statusText);
+    }
+  }
+
+  function submitForm(opts) {
+    return fetch(opts.url, { method: "POST", headers: { "Content-Type": "application/json; charset=utf-8" }, body: JSON.stringify(opts.requestBody) })
+      .then(res => handleAnyErrors(res));
+  }
+
   function createClient(params) {
-    return submitForm({ url: '/create/client', requestBody: { address, clientName } });
+    return submitForm({ url: '/create/client', requestBody: params });
   }
 
   function addressInputHandler(e) {
-    address[e.target.name] = e.target.value;
-    setAddress(address);
+    const addressParam = { [e.target.name]: e.target.value };
+    setAddress(prev => {
+      return { ...prev, ...addressParam }
+    });
   }
 
-  function handleSubmit() {
-    addAddress ? createClient({ address, clientName })
+  function handleSubmit(e) {
+    e.preventDefault();
+    addAddress ? createClient({ address, clientName, addAddress })
       .then(res => {
-        setMessage(message);
+        setNotificationConfig({ message: res.message, style: "success" });
         setClientName('');
         setAddress(initialiseAddress());
         setAddress(false);
         getClients();
       })
-      .catch(err => updateStatusBarMessage("An error occurred, please try again"))
+      .catch(err => {
+        setNotificationConfig({ message: "An error occurred, please try again", style: "error" })
+      })
       : createClient({ clientName })
         .then(res => {
-          setMessage(message);
+          setNotificationConfig({ message: res.message, style: "success" });
           setClientName('');
           getClients();
         })
-        .catch(err => updateStatusBarMessage("An error occurred, please try again"));
+        .catch(err => {
+          setNotificationConfig({ message: "An error occurred, please try again", style: "error" })
+        });
   }
 
-  // statusMessage ? this.triggerStatusBarTransition(statusMessage) : null;
-
   return (
-    <form onSubmit={(e) => handleSubmit()}>
-      <StatusBar message={statusMessage} />
+    <form onSubmit={(e) => handleSubmit(e)}>
+      <StatusBar notificationConfig={notificationConfig} />
       <div id="client-input" className="panel-item">
         <label htmlFor="client-name">Name:</label>
         <input id="client-name" type="text" name="clientName" value={clientName} onChange={(e) => setClientName(e.target.value)} />
       </div>
       <div id="include-address-control" className="panel-controls">
         <label htmlFor="include-address">Add an address?</label><br />
-        <input id="include-address" type="checkbox" name="random" value={this.state.addAddress} checked={addAddress} onChange={(e) => handleCheckboxChange()} />
+        <input id="include-address" type="checkbox" name="random" value={addAddress} checked={addAddress} onChange={(e) => handleCheckboxChange()} />
       </div>
       <div>
         {addAddress ? <AddressFields

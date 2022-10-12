@@ -12,15 +12,20 @@ function InvoiceForm(props) {
       daysOff: '',
       hourlyRate: '',
       invoiceDate: '',
-      invoiceDescription: '',
+      description: '',
       csvFilename: '',
+      mySelectedAddress: '',
+      selectedClientAddress: ''
     }
   }
 
   const [formParams, setFormParams] = useState(initialiseForm());
-  const { clientAddresses, myAddresses, invoiceBeingEdited, refreshInvoiceList, closeForm, updateStatusBarMessage, handleErrors } = props;
+  const { year, monthWorked, daysOff, hourlyRate, invoiceDate, description, csvFilename, mySelectedAddress, selectedClientAddress } = formParams;
+  const { clientAddresses, myAddresses, invoiceBeingEdited, refreshInvoiceList, closeForm, setNotificationConfig, handleErrors } = props;
 
-  useEffect(() => invoiceBeingEdited ? initialiseFormStateFromInvoice(myAddresses) : null, []);
+  useEffect(() => {
+    invoiceBeingEdited ? initialiseFormStateFromInvoice(invoiceBeingEdited) : null
+  }, []);
 
   function submitButtonIsDisabled(clientAddresses, myAddresses) {
     return clientAddresses.length == 0 || myAddresses.length == 0;
@@ -32,18 +37,20 @@ function InvoiceForm(props) {
 
   function initialiseFormStateFromInvoice(invoiceBeingEdited) {
     const { year, month, daysOff, rate, date, description, csvFilename, myAddressRef, clientRef } = invoiceBeingEdited;
-
-    setFormParams({
-      year,
-      monthWorked: month,
-      daysOff,
-      hourlyRate: rate,
-      invoiceDate: moment(date).format("DD[/]MM[/]YYYY"),
-      invoiceDescription: description,
-      csvFilename,
-      mySelectedAddress: getAddressFromId(invoiceBeingEdited.myAddressRef, "my address"),
-      selectedClientAddress: getAddressFromId(invoiceBeingEdited.clientRef, "client")
-    })
+    setFormParams(prev => {
+      const newParams = {
+        year,
+        monthWorked: month,
+        daysOff,
+        hourlyRate: rate,
+        invoiceDate: moment(date).utc().format("DD[/]MM[/]YYYY"),
+        description: description,
+        csvFilename,
+        mySelectedAddress: getAddressFromId(myAddressRef, "my address"),
+        selectedClientAddress: getAddressFromId(clientRef, "client")
+      };
+      return { ...newParams };
+    });
   }
 
   function daysInMonth(year, monthWorked) {
@@ -88,12 +95,12 @@ function InvoiceForm(props) {
   }
 
   function addDatesToDescription(year, monthWorked, invoiceBeingEdited, description) {
-    return invoiceBeingEdited ? description : `${description} from 01/${formatMonth(monthWorked)}/${year} to ${daysInMonth(year, monthWorked)}/${this.formatMonth(monthWorked)}/${year}`;
+    return invoiceBeingEdited ? description : `${description} from 01/${formatMonth(monthWorked)}/${year} to ${daysInMonth(year, monthWorked)}/${formatMonth(monthWorked)}/${year}`;
   }
 
   function onDropdownValueSelect(e) {
     const selectedAddress = e.target.name == "selectedClientAddress" ? getSelectedClientAddress(e.target.value, props.clientAddresses) : getMySelectedAddress(e.target.value, props.myAddresses);
-    handleFormInput(e.target.name, selectedAddress);
+    handleFormInput({ [e.target.name]: selectedAddress });
   }
 
   function generateRequestBody(invoiceBeingEdited, state) {
@@ -125,10 +132,10 @@ function InvoiceForm(props) {
     return clientAddresses.find(address => value == address.id);
   }
 
-  function handleFormInput(propName, propValue) {
-    const newFormParams = [...formParams]
-    newFormParams[propName] = propValue;
-    setFormParams(newFormParams);
+  function handleFormInput(newParams) {
+    setFormParams(prev => {
+      return { ...prev, ...newParams }
+    });
   }
 
   function handleSubmit(e) {
@@ -142,10 +149,10 @@ function InvoiceForm(props) {
     })
       .then(res => handleErrors(res))
       .then(res => {
-        updateStatusBarMessage(res.message)
+        setNotificationConfig({ message: res.message, style: "success" })
         refreshInvoiceList();
         closeForm();
-      }).catch(err => updateStatusBarMessage("An error occurred. Please try again."));
+      }).catch(err => setNotificationConfig({ message: "An error occurred. Please try again.", style: "error" }));
   }
 
   return (
@@ -158,7 +165,7 @@ function InvoiceForm(props) {
           className="short-input"
           type="text"
           value={year}
-          onChange={(e) => handleFormInput(e.target.name, e.target.value)}
+          onChange={(e) => handleFormInput({ [e.target.name]: e.target.value })}
         />
       </div>
       <div className="form-field">
@@ -168,8 +175,8 @@ function InvoiceForm(props) {
           name="monthWorked"
           className="short-input"
           type="number"
-          value={monthWorked || ''}
-          onChange={(e) => handleFormInput(e.target.name, e.target.value)}
+          value={monthWorked}
+          onChange={(e) => handleFormInput({ [e.target.name]: e.target.value })}
         />
       </div>
       <div className="form-field">
@@ -179,8 +186,8 @@ function InvoiceForm(props) {
           name="daysOff"
           className="short-input"
           type="number"
-          value={daysOff || ''}
-          onChange={(e) => handleFormInput(e.target.name, e.target.value)}
+          value={daysOff}
+          onChange={(e) => handleFormInput({ [e.target.name]: e.target.value })}
         />
       </div>
       <div className="form-field">
@@ -190,8 +197,8 @@ function InvoiceForm(props) {
           name="hourlyRate"
           className="short-input"
           type="text"
-          value={hourlyRate || ''}
-          onChange={(e) => handleFormInput(e.target.name, e.target.value)}
+          value={hourlyRate}
+          onChange={(e) => handleFormInput({ [e.target.name]: e.target.value })}
         />
       </div>
       <div className="form-field">
@@ -201,8 +208,8 @@ function InvoiceForm(props) {
           name="invoiceDate"
           className=""
           type="text"
-          value={invoiceDate || ''}
-          onChange={(e) => handleFormInput(e.target.name, e.target.value)}
+          value={invoiceDate}
+          onChange={(e) => handleFormInput({ [e.target.name]: e.target.value })}
         />
       </div>
       <div className="form-field">
@@ -212,8 +219,8 @@ function InvoiceForm(props) {
           name="description"
           className="description-input"
           type="text"
-          value={description || ''}
-          onChange={(e) => handleFormInput(e.target.name, e.target.value)}
+          value={description}
+          onChange={(e) => handleFormInput({ [e.target.name]: e.target.value })}
         />
       </div>
       <div className="form-field">
@@ -223,8 +230,8 @@ function InvoiceForm(props) {
           name="csvFilename"
           className="medium-input"
           type="text"
-          value={csvFilename || ''}
-          onChange={(e) => handleFormInput(e.target.name, e.target.value)}
+          value={csvFilename}
+          onChange={(e) => handleFormInput({ [e.target.name]: e.target.value })}
         />
       </div>
       {clientAddresses.length > 0 ?

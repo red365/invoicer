@@ -1,38 +1,13 @@
-import React, { useState, useEffect, createContext } from 'react';
-import { withRouter, BrowserRouter, Route, Switch } from 'react-router-dom';
-import useAPI from '../hooks/useAPI';
-// import Clients from './Clients';
+import React from 'react';
+import { BrowserRouter, Route, Switch } from 'react-router-dom';
+import Clients from './Clients';
 import Invoices from './Invoices';
 import Invoice from './Invoice';
-// import Addresses from './Addresses';
+import Addresses from './Addresses';
 import Header from '../components/Header';
 
 function ViewContainer(props) {
-  // state = {
-  //   invoices: undefined,
-  //   clients: undefined
-  // }
 
-  // const {clients, }
-
-  // fetchClients = () => this.fetch({ url: `/get/clients`, method: "GET" }).then(res => res.json());
-
-  // fetchMyAddresses = () => this.fetch({ url: '/get/my-addresses', method: "GET" }).then(res => res.json());
-
-  // fetchBusinessDetails = () => this.fetch({ url: '/get/business-details', method: "GET" }).then(res => res.json());
-
-  // updateContainerData = (...args) => {
-  //   !this.state.clients || args.includes("clients") ? this.fetchClients().then(res => this.setState({ clients: res })) : null;
-  //   !this.state.myAddresses || args.includes("myAddresses") ? this.fetchMyAddresses().then(res => this.setState({ myAddresses: res })) : null;
-  //   !this.state.contactDetails ? this.fetchBusinessDetails().then(res => this.setState({ contactDetails: res.contactDetails })) : null
-  // }
-
-  // componentDidMount = () => {
-  //   this.updateContainerData();
-  // }
-
-  // render() {
-  //   const { clients, clientAddresses, myAddresses, contactDetails } = this.state;
   return (
     <BrowserRouter>
       <Switch>
@@ -42,8 +17,8 @@ function ViewContainer(props) {
             <Header />
             <div id="container">
               <div className="panel">
-                {/* <Route path="/addresses" render={(props) => <Addresses />} />
-                <Route path="/clients" render={(props) => <Clients />} /> */}
+                <Route path="/addresses" render={(props) => <Addresses />} />
+                <Route path="/clients" render={(props) => <Clients />} />
                 <Route exact path="/" render={(props) => <Invoices />} />
               </div>
             </div>

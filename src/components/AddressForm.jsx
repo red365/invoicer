@@ -1,13 +1,9 @@
-import React from 'react';
-import AddressBasedForm from './AddressBasedForm';
+import React, { useState } from 'react';
 import AddressFields from './AddressFields';
 import Dropdown from './Dropdown';
-import statusBarTransition from '../utils/statusBarTransition';
 import StatusBar from '../components/StatusBar';
 import useAPI from '../hooks/useAPI';
-import useStatusBarNotification from '../hooks/useStatusBarNotification';
-
-// triggerStatusBarTransition = statusMessage => {}
+import useStatusBar from '../hooks/useStatusBar';
 
 function AddressForm(props) {
 
@@ -23,18 +19,32 @@ function AddressForm(props) {
     }
   }
 
-  const { getMyAddresses, clients } = useAPI().data;
+  const { getMyAddresses } = useAPI();
+  const { clients } = useAPI().data;
 
   const [address, setAddress] = useState(initialiseAddress());
-  const [statusMessage, setStatusMessage] = useState('');
   const [isClientAddress, setIsClientAddress] = useState(false);
   const [selectedClient, setSelectedClient] = useState(undefined);
-
-
+  const [notificationConfig, setNotificationConfig] = useStatusBar();
 
   function addressInputHandler(e) {
     address[e.target.name] = e.target.value;
     setAddress(address);
+  }
+
+  function handleAnyErrors(response) {
+    if (response.ok) {
+      return response.json();
+    } else {
+      throw Error(response.statusText);
+    }
+  }
+
+  function addressInputHandler(e) {
+    const addressParam = { [e.target.name]: e.target.value };
+    setAddress(prev => {
+      return { ...prev, ...addressParam }
+    });
   }
 
   function onDropdownValueSelect(e, clients) {
@@ -50,27 +60,28 @@ function AddressForm(props) {
   }
 
   function submitForm(opts) {
-    return fetch(opts.url, { method: "POST", headers: { "Content-Type": "application/json; charset=utf-8" }, body: JSON.stringify(opts.requestBody) }).then(res => handleErrors(res));
+    return fetch(opts.url, { method: "POST", headers: { "Content-Type": "application/json; charset=utf-8" }, body: JSON.stringify(opts.requestBody) }).then(res => handleAnyErrors(res));
   }
 
-  function handleSubmit() {
+  function handleSubmit(e) {
     e.preventDefault();
     submitForm({ url: '/create/address', requestBody: { address, isClientAddress, selectedClient } })
       .then(res => {
-        setStatusMessage(res.message);
-        initialiseAddress();
+        setNotificationConfig({ message: res.message, style: "success" });
+        setAddress(initialiseAddress());
         !isClientAddress ? getMyAddresses() : null;
         if (selectedClient) {
           setSelectedClient(undefined);
-          isClientAddress(false);
+          setIsClientAddress(false);
         }
-      }).catch(err => setStatusMessage("An error occurred. Please try again"));
+      }).catch(err => {
+        setNotificationConfig({ message: "An error occurred, please try again", style: "error" })
+      });
   }
 
-  // useStatusBarNotification() ? useStatusBarTransition() : null;
   return (
-    <form className="address-form" onSubmit={(e) => handleSubmit()} >
-      <StatusBar message={statusMessage} />
+    <form className="address-form" onSubmit={(e) => handleSubmit(e)} >
+      <StatusBar notificationConfig={notificationConfig} />
       <div>
         <label>Choose an address type:</label>
         <div>

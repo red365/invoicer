@@ -5,7 +5,6 @@ const TRANSITION_DURATION = 5000
 
 function useStatusBarTransition() {
     const [message, setStatusMessage] = useStatusBarNotification;
-    // Allow time to fade out before resetting the message
     setTimeout(() => setStatusMessage(''), TRANSITION_DURATION + 1500);
 }
 

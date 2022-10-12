@@ -22,12 +22,6 @@ const APIContextProvider = ({ children }) => {
     getBusinessDetails();
   }
 
-  // updateContainerData = (...args) => {
-  //     !this.state.clients || args.includes("clients") ? this.fetchClients().then(res => this.setState({ clients: res })) : null;
-  //     !this.state.myAddresses || args.includes("myAddresses") ? this.fetchMyAddresses().then(res => this.setState({ myAddresses: res })) : null;
-  //     !this.state.contactDetails ? this.fetchBusinessDetails().then(res => this.setState({ contactDetails: res.contactDetails })) : null
-  // }
-
   useEffect(() => getAPIData(), [])
 
   return <APIContext.Provider value={{ data, getClients, getMyAddresses, getBusinessDetails }} >{children}</APIContext.Provider>

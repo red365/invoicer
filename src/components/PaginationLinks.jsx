@@ -24,12 +24,8 @@ function PaginationLinks(props) {
     displayPageOfInvoices(index);
   }
 
-  // function componentWillUpdate(nextProps, nextState) => this.props.invoicesPerPage != nextProps.invoicesPerPage ? this.setActivePage(0) : null;
-
   function generatePaginationButtons(invoicesPerPage, totalInvoices, activePageIndex) {
-    console.log("Inv per page: ", invoicesPerPage);
     return invoicesPerPage > 0 ? [...Array(getNumberOfPages(invoicesPerPage, totalInvoices))].map((el, i) => {
-      console.log(<button key={i} type="button" className={`${activePageIndex == i ? "active-page" : ""} pagination-button invoice-list-button btn`} value={i} onClick={(e) => setActivePage(e.target.value)} >{i + 1}</button>)
       return <button key={i} type="button" className={`${activePageIndex == i ? "active-page" : ""} pagination-button invoice-list-button btn`} value={i} onClick={(e) => setActivePage(e.target.value)} >{i + 1}</button>
     }) : null;
   }

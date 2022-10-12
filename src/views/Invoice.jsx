@@ -5,7 +5,6 @@ var moment = require('moment-business-days');
 function Invoice(props) {
   const [timesheetEntries, setTimesheetEntries] = useState(undefined);
   const { invoice, client, clientAddress, businessAddress, contactDetails } = props.location.state;
-
   useEffect(() => {
     fetch(`/get/csv`, {
       method: "POST",
@@ -18,8 +17,8 @@ function Invoice(props) {
     }).then(res => res.json()).then(res => {
 
       // Filter header row
-      const filteredTimesheet = res.filter(row => row.task != '' && row.task != "Work Description")
-      setTimesheetEntries(filteredTimesheet);
+      const filteredTimesheets = res.filter((entry) => moment.weekdays().includes(entry.day) && entry.task != '');
+      setTimesheetEntries(filteredTimesheets);
     });
   }, [])
 
@@ -31,7 +30,7 @@ function Invoice(props) {
   return (
     <section id="page" size="A4">
       <header className="header">
-        {businessAddress ? <BusinessAddress address={businessAddress} contactDetails={contactDetails} /> : null}
+        {businessAddress ? <BusinessAddress address={businessAddress} {...contactDetails} /> : null}
         <h3 className="invoice-heading">Invoice</h3>
       </header>
 
@@ -41,7 +40,7 @@ function Invoice(props) {
       {clientAddress ? <ClientAddress className="invoice-heading" address={clientAddress} client={client} /> : null}
 
       <div className="invoice-date">
-        <h6 className="invoice-heading">Date:</h6><label className="invoice-heading date-text">{invoice ? moment(invoice.date, 'YYYY/MM/DD').format('DD/MM/YYYY') : null}</label>
+        <h6 className="invoice-heading">Date:</h6><label className="invoice-heading date-text">{invoice ? moment(invoice.date).utc().format("DD[/]MM[/]YYYY") : null}</label>
       </div>
 
       {invoice ? <InvoiceSummary timesheetEntries={timesheetEntries} invoice={invoice} getInvoiceAmount={getTotalInvoiceAmount} /> : null}
@@ -49,7 +48,7 @@ function Invoice(props) {
   )
 }
 
-const InvoiceSummary = props => {
+function InvoiceSummary(props) {
   return (
     <div className="invoice-summary">
       <SummaryTable
@@ -73,7 +72,7 @@ const InvoiceSummary = props => {
   )
 }
 
-const BusinessAddress = props => {
+function BusinessAddress(props) {
   return (
     <div className="businessAddressPanel">
       <label className="business-name" >{props.contactDetails.businessName}</label>
@@ -108,7 +107,7 @@ const ClientAddress = props => {
   )
 }
 
-const SummaryTable = props => {
+function SummaryTable(props) {
   return (
     <table className="table table-borderless">
       <thead>
@@ -122,7 +121,7 @@ const SummaryTable = props => {
       <tbody>
         <tr>
           <td>{props.description}</td>
-          <td className="small-table-cell">{props.quantity}</td>
+          <td className="small-table-cell">{props.hours}</td>
           <td className="small-table-cell">£{props.price}</td>
           <td className="small-table-cell">{`£${props.amount}`}</td>
         </tr>

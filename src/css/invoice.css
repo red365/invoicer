@@ -1,17 +1,13 @@
-
 #page {
   background: white;
   display: block;
   margin: 0 auto;
   margin-bottom: 0.5cm;
-  /* padding-top: 3%;
-  padding-left: 5%;
-  padding-right: 8%; */
   padding: 5%;
-  box-shadow: 0 0 0.5cm rgba(0,0,0,0.5);
+  box-shadow: 0 0 0.5cm rgba(0, 0, 0, 0.5);
 }
 
-#page[size="A4"] {  
+#page[size="A4"] {
   width: 21cm;
   height: 29.7cm;
 
@@ -19,10 +15,13 @@
 
 #page[size="A4"][layout="portrait"] {
   width: 29.7cm;
-  height: 21cm;  
+  height: 21cm;
 }
+
 @media print {
-  body, #page {
+
+  body,
+  #page {
     margin: 0;
     box-shadow: none;
   }
@@ -33,7 +32,9 @@ hr {
   margin: 35px 0;
 }
 
-table, th, td {
+table,
+th,
+td {
   font-size: 0.9em;
 }
 
@@ -52,7 +53,8 @@ th {
   line-height: 1em;
 }
 
-.businessAddressPanel > label, .clientAddressPanel > label {
+.businessAddressPanel>label,
+.clientAddressPanel>label {
   display: block;
 }
 
