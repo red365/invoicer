@@ -8,6 +8,7 @@ import './css/main.css';
 import './css/header.css';
 
 ReactDOM.render(
-    <APIContextProvider>
-        <ViewContainer />
-    </APIContextProvider>, document.getElementById('app'));
+  <APIContextProvider>
+    <ViewContainer />
+  </APIContextProvider>, document.getElementById('app'));
+

@@ -8,7 +8,7 @@ const autoprefixer = require('autoprefixer');
 module.exports = {
   entry: [
     'webpack-hot-middleware/client?reload=true',
-    './src/index'
+    './src/index.tsx'
   ],
   output: {
     path: path.resolve( __dirname, 'dist/static'),
@@ -28,6 +28,11 @@ module.exports = {
         test: /\.jsx?$/,
         exclude: /node_modules/,
         use: ['react-hot-loader/webpack', 'babel-loader']
+      },
+      {
+        test: /\.tsx?$/,
+        exclude: /node_modules/,
+        use: 'ts-loader',
       },
       {
         test: /\.(scss|css)$/,
@@ -67,6 +72,6 @@ module.exports = {
 
   resolve: {
     modules: ['node_modules', 'bower_components'],
-    extensions: ['.js', '.jsx']
+    extensions: ['.tsx', '.js', '.jsx']
   }
 }

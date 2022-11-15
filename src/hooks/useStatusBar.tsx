@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import { NotificationParams } from '../types.js';
 
 function useStatusBar() {
 
-  const [notificationConfig, setNotificationConfig] = useState({ message: '', style: '' });
+  const [notificationConfig, setNotificationConfig] = useState<NotificationParams>({ message: '', style: '' });
   const { message, style } = notificationConfig;
 
   useEffect(() => {
     if (message) {
-      console.log("Setting timeout")
       setTimeout(() => setNotificationConfig({ message: '', style: '' }), 10000);
     }
   }, [message])
 
-  return [notificationConfig, setNotificationConfig];
+  return [notificationConfig, setNotificationConfig] as const;
 }
 
 export default useStatusBar;

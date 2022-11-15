@@ -1,16 +1,17 @@
-import React from 'react';
+import React, { FC } from 'react';
 import Dropdown from './Dropdown';
+import { InvoiceListControlsComponentProps, Invoice } from '../types.js';
 
-function InvoiceListControls(props) {
-  const getSetOfYears = (invoices) => {
+const InvoiceListControls: FC<InvoiceListControlsComponentProps> = (props) => {
+  const getSetOfYears = (invoices: Invoice[]): number[] => {
     if (invoices) {
-      const years = []
+      const years: number[] = [];
       invoices.forEach(invoice => {
         if (!years.includes(invoice.year)) {
           years.push(invoice.year);
         }
       });
-      return years;
+      return years.sort();
     } else {
       return [];
     }

@@ -1,10 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, FC } from 'react';
+import { RouteComponentProps } from 'react-router-dom';
+import {
+  TimesheetEntries,
+  InvoiceState,
+  TimesheetRow,
+  InvoiceSummaryComponentProps,
+  SummaryTableComponentProps,
+  ClientAddressComponentProps,
+  BusinessAddressComponentProps,
+  TotalTableComponentProps,
+  ItemisedTableComponentProps
+} from '../types.js'
 import '../css/invoice.css';
 var moment = require('moment-business-days');
 
-function Invoice(props) {
-  const [timesheetEntries, setTimesheetEntries] = useState(undefined);
-  const { invoice, client, clientAddress, businessAddress, contactDetails } = props.location.state;
+const Invoice: FC<RouteComponentProps> = (props) => {
+  const [timesheetEntries, setTimesheetEntries] = useState([] as TimesheetEntries);
+  const { invoice, client, clientAddress, businessAddress, contactDetails } = props.location.state as InvoiceState;
   useEffect(() => {
     fetch(`/get/csv`, {
       method: "POST",
@@ -12,25 +24,26 @@ function Invoice(props) {
         "Content-Type": "application/json; charset=utf-8"
       },
       body: JSON.stringify({
-        csvFilename: props.location.state.invoice.csvFilename
+        csvFilename: invoice.csvFilename
       }),
     }).then(res => res.json()).then(res => {
 
       // Filter header row
-      const filteredTimesheets = res.filter((entry) => moment.weekdays().includes(entry.day) && entry.task != '');
+      const filteredTimesheets = res.filter((entry: TimesheetRow) => moment.weekdays().includes(entry.day) && entry.task != '');
       setTimesheetEntries(filteredTimesheets);
     });
   }, [])
 
 
-  function getTotalInvoiceAmount(rate, hours) {
-    return parseFloat(rate * hours).toFixed(2);
+  const getTotalInvoiceAmount = (rate: number, hours: number): string => {
+    let total = rate * hours;
+    return parseFloat(total.toString()).toFixed(2);
   }
 
   return (
-    <section id="page" size="A4">
+    <section id="page" page-size="A4">
       <header className="header">
-        {businessAddress ? <BusinessAddress address={businessAddress} {...contactDetails} /> : null}
+        {businessAddress ? <BusinessAddress address={businessAddress} contactDetails={contactDetails} /> : null}
         <h3 className="invoice-heading">Invoice</h3>
       </header>
 
@@ -48,7 +61,7 @@ function Invoice(props) {
   )
 }
 
-function InvoiceSummary(props) {
+const InvoiceSummary: FC<InvoiceSummaryComponentProps> = (props) => {
   return (
     <div className="invoice-summary">
       <SummaryTable
@@ -72,7 +85,7 @@ function InvoiceSummary(props) {
   )
 }
 
-function BusinessAddress(props) {
+const BusinessAddress: FC<BusinessAddressComponentProps> = (props) => {
   return (
     <div className="businessAddressPanel">
       <label className="business-name" >{props.contactDetails.businessName}</label>
@@ -87,7 +100,7 @@ function BusinessAddress(props) {
 
 }
 
-const ClientAddress = props => {
+const ClientAddress: FC<ClientAddressComponentProps> = props => {
   return (
     <div>
       {props.client ?
@@ -98,7 +111,7 @@ const ClientAddress = props => {
           <label>{props.address.addressLineThree}</label>
           {props.address.addressLineFour ? <div><label>{props.address.countyOrState}</label></div> : null}
           <label>{props.address.city}</label>
-          {props.address.countyOrState ? <div><label>{props.client.countyOrState}</label></div> : null}
+          {props.address.countyOrState ? <div><label>{props.address.countyOrState}</label></div> : null}
           <label>{props.address.postOrZipCode}</label>
         </div>
         : null
@@ -107,7 +120,7 @@ const ClientAddress = props => {
   )
 }
 
-function SummaryTable(props) {
+const SummaryTable: FC<SummaryTableComponentProps> = (props) => {
   return (
     <table className="table table-borderless">
       <thead>
@@ -130,13 +143,13 @@ function SummaryTable(props) {
   )
 }
 
-const TotalTable = props => {
+const TotalTable: FC<TotalTableComponentProps> = props => {
 
   return (
     <table className="table table-borderless" >
       <tbody>
         <tr>
-          <td colSpan="2"></td>
+          <td colSpan={2}></td>
           <td className="small-table-cell border-bottom" ><strong>Total</strong></td>
           <td className="small-table-cell border-bottom" >{`£${props.amount}`}</td>
         </tr>
@@ -145,7 +158,7 @@ const TotalTable = props => {
   )
 }
 
-const ItemisedTable = props => {
+const ItemisedTable: FC<ItemisedTableComponentProps> = props => {
   return (
     <table className="table table-borderless">
       <thead>

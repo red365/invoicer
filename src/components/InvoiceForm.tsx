@@ -1,25 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import { withRouter } from 'react-router-dom';
+import React, { useState, useEffect, FC, ChangeEvent, FormEvent } from 'react';
+import {
+  InvoiceFormComponentProps,
+  Invoice,
+  Client,
+  MyAddress,
+  ClientAddress,
+  InvoiceToBeSaved,
+  UpdatedInVoiceFormParms,
+  UnsavedInvoice
+} from '../types';
 import Dropdown from './Dropdown'
 var moment = require('moment-business-days');
 
 
-function InvoiceForm(props) {
-  function initialiseForm() {
+const InvoiceForm: FC<InvoiceFormComponentProps> = (props) => {
+  const initialiseForm = (): UnsavedInvoice => {
     return {
-      year: '',
-      monthWorked: '',
-      daysOff: '',
-      hourlyRate: '',
+      year: undefined,
+      monthWorked: undefined,
+      daysOff: undefined,
+      hourlyRate: undefined,
       invoiceDate: '',
       description: '',
       csvFilename: '',
-      mySelectedAddress: '',
-      selectedClientAddress: ''
+      mySelectedAddress: undefined,
+      selectedClientAddress: undefined
     }
   }
 
-  const [formParams, setFormParams] = useState(initialiseForm());
+  const [formParams, setFormParams] = useState<UnsavedInvoice>(initialiseForm());
   const { year, monthWorked, daysOff, hourlyRate, invoiceDate, description, csvFilename, mySelectedAddress, selectedClientAddress } = formParams;
   const { clientAddresses, myAddresses, invoiceBeingEdited, refreshInvoiceList, closeForm, setNotificationConfig, handleErrors } = props;
 
@@ -27,17 +36,17 @@ function InvoiceForm(props) {
     invoiceBeingEdited ? initialiseFormStateFromInvoice(invoiceBeingEdited) : null
   }, []);
 
-  function submitButtonIsDisabled(clientAddresses, myAddresses) {
-    return clientAddresses.length == 0 || myAddresses.length == 0;
+  const submitButtonIsDisabled = (clientAddresses: Client[], myAddresses: MyAddress[]): boolean => {
+    return Boolean(clientAddresses.length == 0 || myAddresses.length == 0);
   }
 
-  function amountEarnedInMonth(year, monthWorked, daysOff, hourlyRate) {
-    return hoursWorkedInMonth(year, monthWorked, daysOff) * parseFloat(hourlyRate);
+  const amountEarnedInMonth = (year: number, monthWorked: number, daysOff: number, hourlyRate: number): number => {
+    return hoursWorkedInMonth(year, monthWorked, daysOff) * parseFloat(hourlyRate.toString());
   }
 
-  function initialiseFormStateFromInvoice(invoiceBeingEdited) {
+  const initialiseFormStateFromInvoice = (invoiceBeingEdited: Invoice) => {
     const { year, month, daysOff, rate, date, description, csvFilename, myAddressRef, clientRef } = invoiceBeingEdited;
-    setFormParams(prev => {
+    setFormParams((prevState: UnsavedInvoice) => {
       const newParams = {
         year,
         monthWorked: month,
@@ -46,22 +55,22 @@ function InvoiceForm(props) {
         invoiceDate: moment(date).utc().format("DD[/]MM[/]YYYY"),
         description: description,
         csvFilename,
-        mySelectedAddress: getAddressFromId(myAddressRef, "my address"),
-        selectedClientAddress: getAddressFromId(clientRef, "client")
+        mySelectedAddress: getAddressFromId(myAddressRef, "my address") as MyAddress,
+        selectedClientAddress: getAddressFromId(clientRef, "client") as ClientAddress
       };
-      return { ...newParams };
+      return { ...prevState, ...newParams };
     });
   }
 
-  function daysInMonth(year, monthWorked) {
+  const daysInMonth = (year: number, monthWorked: number): number => {
     return moment(`${year}-${formatMonth(monthWorked)}`, 'YYYY-MM').daysInMonth(year, monthWorked);
   }
 
-  function getAddressFromId(value, addressType) {
+  const getAddressFromId = (value: number, addressType: string): MyAddress | ClientAddress => {
     return addressType == "client" ? getSelectedClientAddress(value, clientAddresses) : getMySelectedAddress(value, myAddresses);
   }
 
-  function generateTotalsTable(year, monthWorked, hourlyRate, daysOff) {
+  const generateTotalsTable = (year: number, monthWorked: number, hourlyRate: number | undefined, daysOff: number): JSX.Element => {
     return (
       <table className="table">
         <tbody>
@@ -73,46 +82,48 @@ function InvoiceForm(props) {
     );
   }
 
-  function monthWorkedAsString(year, monthWorked) {
-    const date = new Date(parseInt(year), monthWorked - 1, 1);
+  const monthWorkedAsString = (year: number, monthWorked: number): string => {
+    const date = new Date(year, monthWorked - 1, 1);
     return date.toLocaleString('en-us', { month: 'long' });
   }
 
-  function formatMonth(month) {
+  const formatMonth = (month: number): string => {
     return month < 10 ? `0${month}` : `${month}`;
   }
 
-  function daysWorkedInMonth(year, monthWorked, daysOff) {
+  const daysWorkedInMonth = (year: number, monthWorked: number, daysOff: number): number => {
     return moment(`${getCurrentMonthDateString(year, monthWorked)}`, 'YYYY-MM-DD').businessDaysIntoMonth() - daysOff;
   }
 
-  function hoursWorkedInMonth(year, monthWorked, daysOff) {
+  const hoursWorkedInMonth = (year: number, monthWorked: number, daysOff: number): number => {
     return daysWorkedInMonth(year, monthWorked, daysOff) * 7.5;
   }
 
-  function getCurrentMonthDateString(year, monthWorked) {
+  const getCurrentMonthDateString = (year: number, monthWorked: number): string => {
     return `${year}-${formatMonth(monthWorked)}-${daysInMonth(year, monthWorked)}`;
   }
 
-  function addDatesToDescription(year, monthWorked, invoiceBeingEdited, description) {
+  const addDatesToDescription = (year: number, monthWorked: number, invoiceBeingEdited: Invoice, description: string): string => {
     return invoiceBeingEdited ? description : `${description} from 01/${formatMonth(monthWorked)}/${year} to ${daysInMonth(year, monthWorked)}/${formatMonth(monthWorked)}/${year}`;
   }
 
-  function onDropdownValueSelect(e) {
-    const selectedAddress = e.target.name == "selectedClientAddress" ? getSelectedClientAddress(e.target.value, props.clientAddresses) : getMySelectedAddress(e.target.value, props.myAddresses);
+  const onDropdownValueSelect = (e: ChangeEvent<HTMLSelectElement>): void => {
+    const selectedAddress = e.target.name == "selectedClientAddress" ? getSelectedClientAddress(parseInt(e.target.value), props.clientAddresses) : getMySelectedAddress(parseInt(e.target.value), props.myAddresses);
     handleFormInput({ [e.target.name]: selectedAddress });
   }
 
-  function generateRequestBody(invoiceBeingEdited, state) {
-    const { year, monthWorked, hourlyRate, invoiceDate, daysOff, csvFilename, selectedClientAddress, mySelectedAddress, description } = state;
-    const requestObject = {
-      year,
-      month: monthWorked,
-      rate: hourlyRate,
+  const generateRequestBody = (invoiceBeingEdited: Invoice, unsavedInvoice: UnsavedInvoice): InvoiceToBeSaved => {
+    const { year, monthWorked, hourlyRate, invoiceDate, daysOff, csvFilename, description } = unsavedInvoice;
+    const selectedClientAddress = unsavedInvoice.selectedClientAddress!;
+    const mySelectedAddress = unsavedInvoice.mySelectedAddress!;
+    const requestObject: InvoiceToBeSaved = {
+      year: year!,
+      month: monthWorked!,
+      rate: hourlyRate!,
       date: moment(invoiceDate, "DD/MM/YYYY").format("YYYY-MM-DD"),
-      hours: hoursWorkedInMonth(year, monthWorked, daysOff),
-      daysOff,
-      description: addDatesToDescription(year, monthWorked, invoiceBeingEdited, description),
+      hours: hoursWorkedInMonth(year!, monthWorked!, daysOff!),
+      daysOff: daysOff!,
+      description: addDatesToDescription(year!, monthWorked!, invoiceBeingEdited, description),
       csvFilename,
       clientRef: selectedClientAddress.id,
       myAddressRef: mySelectedAddress.id
@@ -124,31 +135,31 @@ function InvoiceForm(props) {
     return requestObject;
   }
 
-  function getMySelectedAddress(value, myAddresses) {
-    return myAddresses.find(address => value == address.id);
+  const getMySelectedAddress = (value: number, myAddresses: MyAddress[]): MyAddress => {
+    return myAddresses.find((address: MyAddress) => value == address.id) as MyAddress;
   }
 
-  function getSelectedClientAddress(value, clientAddresses) {
-    return clientAddresses.find(address => value == address.id);
+  const getSelectedClientAddress = (value: number, clientAddresses: ClientAddress[]): ClientAddress => {
+    return clientAddresses.find((address: ClientAddress) => value == address.id) as ClientAddress;
   }
 
-  function handleFormInput(newParams) {
+  const handleFormInput = (newParams: UpdatedInVoiceFormParms): void => {
     setFormParams(prev => {
       return { ...prev, ...newParams }
     });
   }
 
-  function handleSubmit(e) {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
     e.preventDefault()
     fetch(invoiceBeingEdited ? `/update/invoice` : `/save/invoice`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json; charset=utf-8"
       },
-      body: JSON.stringify(generateRequestBody(invoiceBeingEdited, formParams)),
+      body: JSON.stringify(generateRequestBody(invoiceBeingEdited!, formParams)),
     })
-      .then(res => handleErrors(res))
-      .then(res => {
+      .then((res: any) => handleErrors(res))
+      .then((res: any) => {
         setNotificationConfig({ message: res.message, style: "success" })
         refreshInvoiceList();
         closeForm();
@@ -264,7 +275,7 @@ function InvoiceForm(props) {
         {year && monthWorked && daysOff ? generateTotalsTable(year, monthWorked, hourlyRate, daysOff) : null}
       </div>
       <div className="button-container">
-        <button type="submit" className="btn btn-primary" style={submitButtonIsDisabled(clientAddresses, myAddresses) ? { backgroundColor: "#999" } : null} disabled={submitButtonIsDisabled(clientAddresses, myAddresses)}>{invoiceBeingEdited ? 'Update' : 'Save'}</button>
+        <button type="submit" className="btn btn-primary" style={submitButtonIsDisabled(clientAddresses, myAddresses) ? { backgroundColor: "#999" } : undefined} disabled={submitButtonIsDisabled(clientAddresses, myAddresses)}>{invoiceBeingEdited ? 'Update' : 'Save'}</button>
         <button type="button" className="invoice-list-button btn" onClick={closeForm}>Back</button>
       </div>
 
@@ -272,4 +283,4 @@ function InvoiceForm(props) {
   )
 }
 
-export default withRouter(InvoiceForm);
+export default InvoiceForm;

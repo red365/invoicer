@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, FC, FormEvent, ChangeEvent } from 'react';
+import { Address, FetchOpts, CreateClientFetchOpts, CreateClientFetchOptsBody } from '../types';
 import AddressFields from './AddressFields';
 import StatusBar from './StatusBar';
 import useStatusBar from '../hooks/useStatusBar';
 import useAPI from '../hooks/useAPI';
 
-function ClientForm() {
-  function initialiseAddress() {
+const ClientForm: FC = () => {
+  const initialiseAddress = (): Address => {
     return {
       addressLineOne: '',
       addressLineTwo: '',
@@ -23,7 +24,7 @@ function ClientForm() {
   const [clientName, setClientName] = useState('');
   const [notificationConfig, setNotificationConfig] = useStatusBar();
 
-  function handleCheckboxChange() {
+  const handleCheckboxChange = (): void => {
     if (addAddress) {
       setAddress(initialiseAddress());
       setAddAddress(false);
@@ -32,7 +33,7 @@ function ClientForm() {
     }
   }
 
-  function handleAnyErrors(response) {
+  const handleAnyErrors = (response: any): any | void => {
     if (response.ok) {
       return response.json();
     } else {
@@ -40,36 +41,36 @@ function ClientForm() {
     }
   }
 
-  function submitForm(opts) {
-    return fetch(opts.url, { method: "POST", headers: { "Content-Type": "application/json; charset=utf-8" }, body: JSON.stringify(opts.requestBody) })
-      .then(res => handleAnyErrors(res));
+  function submitForm(opts: CreateClientFetchOpts) {
+    return fetch(opts.url, { method: "POST", headers: { "Content-Type": "application/json; charset=utf-8" }, body: JSON.stringify(opts.body) })
+      .then((res: any) => handleAnyErrors(res));
   }
 
-  function createClient(params) {
-    return submitForm({ url: '/create/client', requestBody: params });
+  function createClient(params: CreateClientFetchOptsBody) {
+    return submitForm({ url: '/create/client', body: params });
   }
 
-  function addressInputHandler(e) {
+  const addressInputHandler = (e: ChangeEvent<HTMLInputElement>): void => {
     const addressParam = { [e.target.name]: e.target.value };
     setAddress(prev => {
       return { ...prev, ...addressParam }
     });
   }
 
-  function handleSubmit(e) {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
     addAddress ? createClient({ address, clientName, addAddress })
       .then(res => {
         setNotificationConfig({ message: res.message, style: "success" });
         setClientName('');
         setAddress(initialiseAddress());
-        setAddress(false);
+        setAddAddress(false);
         getClients();
       })
       .catch(err => {
         setNotificationConfig({ message: "An error occurred, please try again", style: "error" })
       })
-      : createClient({ clientName })
+      : createClient({ clientName, addAddress })
         .then(res => {
           setNotificationConfig({ message: res.message, style: "success" });
           setClientName('');
@@ -81,19 +82,19 @@ function ClientForm() {
   }
 
   return (
-    <form onSubmit={(e) => handleSubmit(e)}>
+    <form onSubmit={(e: FormEvent<HTMLFormElement>) => handleSubmit(e)}>
       <StatusBar notificationConfig={notificationConfig} />
       <div id="client-input" className="panel-item">
         <label htmlFor="client-name">Name:</label>
-        <input id="client-name" type="text" name="clientName" value={clientName} onChange={(e) => setClientName(e.target.value)} />
+        <input id="client-name" type="text" name="clientName" value={clientName} onChange={(e: ChangeEvent<HTMLInputElement>) => setClientName(e.target.value)} />
       </div>
       <div id="include-address-control" className="panel-controls">
         <label htmlFor="include-address">Add an address?</label><br />
-        <input id="include-address" type="checkbox" name="random" value={addAddress} checked={addAddress} onChange={(e) => handleCheckboxChange()} />
+        <input id="include-address" type="checkbox" name="random" checked={addAddress} onChange={(e: ChangeEvent<HTMLInputElement>) => handleCheckboxChange()} />
       </div>
       <div>
         {addAddress ? <AddressFields
-          changeHandler={(e) => addressInputHandler(e)}
+          changeHandler={(e: ChangeEvent<HTMLInputElement>) => addressInputHandler(e)}
           addressLineOne={address.addressLineOne}
           addressLineTwo={address.addressLineTwo}
           addressLineThree={address.addressLineThree}

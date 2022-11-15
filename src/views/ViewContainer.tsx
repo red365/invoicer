@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { FC } from 'react';
 import { BrowserRouter, Route, Switch } from 'react-router-dom';
 import Clients from './Clients';
 import Invoices from './Invoices';
@@ -6,8 +6,8 @@ import Invoice from './Invoice';
 import Addresses from './Addresses';
 import Header from '../components/Header';
 
-function ViewContainer(props) {
-
+// function ViewContainer(): JSX.Element {
+const ViewContainer: FC = () => {
   return (
     <BrowserRouter>
       <Switch>

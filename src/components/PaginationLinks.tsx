@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, FC, ChangeEvent } from 'react';
+import { PaginationLinksComponentProps } from '../types.js';
 
-function PaginationLinks(props) {
+const PaginationLinks: FC<PaginationLinksComponentProps> = (props) => {
   const [activePageIndex, setActivePageIndex] = useState(0);
   const { displayPageOfInvoices, invoicesPerPage, totalInvoices } = props;
   const invoicesPerPageRef = useRef(invoicesPerPage);
-
-  console
 
   useEffect(() => displayPageOfInvoices(activePageIndex), []);
   useEffect(() => {
@@ -13,20 +12,20 @@ function PaginationLinks(props) {
       setActivePage(0)
       invoicesPerPageRef.current = invoicesPerPage;
     }
-  }, [...props])
+  }, [invoicesPerPage, totalInvoices])
 
-  function getNumberOfPages(invoicesPerPage, totalInvoices) {
+  const getNumberOfPages = (invoicesPerPage: number, totalInvoices: number) => {
     return Math.ceil(totalInvoices / invoicesPerPage);
   }
 
-  function setActivePage(index) {
+  const setActivePage = (index: number): void => {
     setActivePageIndex(index);
     displayPageOfInvoices(index);
   }
 
-  function generatePaginationButtons(invoicesPerPage, totalInvoices, activePageIndex) {
+  const generatePaginationButtons = (invoicesPerPage: number, totalInvoices: number, activePageIndex: number): JSX.Element[] | null => {
     return invoicesPerPage > 0 ? [...Array(getNumberOfPages(invoicesPerPage, totalInvoices))].map((el, i) => {
-      return <button key={i} type="button" className={`${activePageIndex == i ? "active-page" : ""} pagination-button invoice-list-button btn`} value={i} onClick={(e) => setActivePage(e.target.value)} >{i + 1}</button>
+      return <button key={i} type="button" className={`${activePageIndex == i ? "active-page" : ""} pagination-button invoice-list-button btn`} value={i} onClick={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => setActivePage(parseInt(e.currentTarget.value))} >{i + 1}</button>
     }) : null;
   }
 

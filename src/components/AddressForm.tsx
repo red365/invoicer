@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, FC, FormEvent, ChangeEvent } from 'react';
+import {
+  Address, Client, CreateAddressFetchOpts
+} from '../types';
 import AddressFields from './AddressFields';
 import Dropdown from './Dropdown';
 import StatusBar from '../components/StatusBar';
 import useAPI from '../hooks/useAPI';
 import useStatusBar from '../hooks/useStatusBar';
 
-function AddressForm(props) {
+const AddressForm: FC = () => {
 
   function initialiseAddress() {
     return {
@@ -22,17 +25,17 @@ function AddressForm(props) {
   const { getMyAddresses } = useAPI();
   const { clients } = useAPI().data;
 
-  const [address, setAddress] = useState(initialiseAddress());
+  const [address, setAddress] = useState<Address>(initialiseAddress());
   const [isClientAddress, setIsClientAddress] = useState(false);
-  const [selectedClient, setSelectedClient] = useState(undefined);
+  const [selectedClient, setSelectedClient] = useState<Client | undefined>(undefined);
   const [notificationConfig, setNotificationConfig] = useStatusBar();
 
-  function addressInputHandler(e) {
-    address[e.target.name] = e.target.value;
-    setAddress(address);
+  const addressInputHandler = (e: ChangeEvent<HTMLInputElement>): void => {
+    const { name, value } = e.target
+    setAddress(prevState => ({ ...prevState, [name]: value }));
   }
 
-  function handleAnyErrors(response) {
+  const handleAnyErrors = (response: any): void => {
     if (response.ok) {
       return response.json();
     } else {
@@ -40,33 +43,26 @@ function AddressForm(props) {
     }
   }
 
-  function addressInputHandler(e) {
-    const addressParam = { [e.target.name]: e.target.value };
-    setAddress(prev => {
-      return { ...prev, ...addressParam }
-    });
-  }
-
-  function onDropdownValueSelect(e, clients) {
+  const onDropdownValueSelect = (e: ChangeEvent<HTMLSelectElement>, clients: Client[]): void => {
     e.target.value ? setSelectedClient(getItemFromList(e.target.value, clients)) : setSelectedClient(undefined);
   }
 
-  function getItemFromList(value, list) {
+  const getItemFromList = (value: string | number, list: Client[]): Client | undefined => {
     return list.find(item => item.id == value);
   }
 
-  function handleRadioSelect(e) {
+  const handleRadioSelect = (e: ChangeEvent<HTMLInputElement>): any => {
     e.target.value == "true" ? setIsClientAddress(true) : setIsClientAddress(false);
   }
 
-  function submitForm(opts) {
-    return fetch(opts.url, { method: "POST", headers: { "Content-Type": "application/json; charset=utf-8" }, body: JSON.stringify(opts.requestBody) }).then(res => handleAnyErrors(res));
+  const submitForm = (opts: CreateAddressFetchOpts): any => {
+    return fetch(opts.url, { method: "POST", headers: { "Content-Type": "application/json; charset=utf-8" }, body: JSON.stringify(opts.body) }).then(res => handleAnyErrors(res));
   }
 
-  function handleSubmit(e) {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
-    submitForm({ url: '/create/address', requestBody: { address, isClientAddress, selectedClient } })
-      .then(res => {
+    submitForm({ url: '/create/address', body: { address, isClientAddress, selectedClient } })
+      .then((res: any) => {
         setNotificationConfig({ message: res.message, style: "success" });
         setAddress(initialiseAddress());
         !isClientAddress ? getMyAddresses() : null;
@@ -74,10 +70,12 @@ function AddressForm(props) {
           setSelectedClient(undefined);
           setIsClientAddress(false);
         }
-      }).catch(err => {
+      }).catch((err: any) => {
         setNotificationConfig({ message: "An error occurred, please try again", style: "error" })
       });
   }
+
+  const selectedClientId = selectedClient && selectedClient.id ? selectedClient.id : '';
 
   return (
     <form className="address-form" onSubmit={(e) => handleSubmit(e)} >
@@ -85,17 +83,17 @@ function AddressForm(props) {
       <div>
         <label>Choose an address type:</label>
         <div>
-          <input type="radio" checked={isClientAddress == false} id="business" name="business" value={"false"} onChange={(e) => handleRadioSelect(e)} />
+          <input type="radio" checked={isClientAddress == false} id="business" name="business" value={"false"} onChange={(e: ChangeEvent<HTMLInputElement>) => handleRadioSelect(e)} />
           <label htmlFor="business">Business</label>
         </div>
         <div>
-          <input type="radio" id="client" checked={isClientAddress == true} name="client" value={"true"} onChange={(e) => handleRadioSelect(e)} />
+          <input type="radio" id="client" checked={isClientAddress == true} name="client" value={"true"} onChange={(e: ChangeEvent<HTMLInputElement>) => handleRadioSelect(e)} />
           <label htmlFor="client">Client</label>
         </div>
       </div>
       <div className="panel-controls">
         <div id="client-select">
-          {clients && isClientAddress ? <div><label>Client: </label><Dropdown id="client-select" dropdownItems={clients} propToUseAsItemText="name" value={selectedClient ? selectedClient.id : ''} changeHandler={(e) => onDropdownValueSelect(e, clients)} /></div> : null}
+          {clients && isClientAddress ? <div><label>Client: </label><Dropdown id="client-select" dropdownItems={clients} propToUseAsItemText="name" value={selectedClientId} changeHandler={(e: ChangeEvent<HTMLSelectElement>) => onDropdownValueSelect(e, clients)} /></div> : null}
         </div>
       </div>
       <AddressFields

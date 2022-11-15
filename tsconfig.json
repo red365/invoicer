@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "outDir": "./src/",
+        "noImplicitAny": true,
+        "module": "es6",
+        "target": "es5",
+        "jsx": "react",
+        "allowJs": true,
+        "moduleResolution": "node"
+    },
+    "files": [
+        // "src/utils/CsvImporter.ts",
+        // "src/utils/DatabaseConnector.ts",
+        // "src/utils/DatabasePool.ts",
+        // "src/dev.config.ts",
+        // "src/prod.config.ts",
+        "src/server.ts"
+    ]
+}

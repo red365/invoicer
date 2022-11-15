@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { FC } from 'react';
+import { RouteComponentProps, withRouter } from 'react-router-dom';
 import ClientForm from '../components/ClientForm';
 
-const Clients = props => {
+const Clients: FC<RouteComponentProps> = (props) => {
   return (
     <div>
       <div className="panel-title">
@@ -12,4 +13,4 @@ const Clients = props => {
   )
 }
 
-export default Clients;
+export default withRouter(Clients);
